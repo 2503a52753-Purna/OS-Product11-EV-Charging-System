@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRU | EV Charging Station Allocation System - Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sru-navy: #0B4D9C;
+      --sru-dark: #0A1128;
+      --card-bg: #111827;
+      --card-border: #1E293B;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --accent-blue: #38BDF8;
+      --accent-green: #10B981;
+      --accent-amber: #F59E0B;
+      --accent-purple: #A855F7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #020617;
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    /* Presentation Frame (16:9 Aspect Ratio) */
+    .deck-container {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      aspect-ratio: 16 / 9;
+      background: var(--sru-dark);
+      border: 1px solid #1E293B;
+      border-radius: 16px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide {
+      display: none;
+      flex: 1;
+      padding: 48px 56px;
+      flex-direction: column;
+      justify-content: space-between;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Slide Header */
+    .slide-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    .slide-tag {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .slide-title {
+      font-size: 30px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.5px;
+    }
+
+    /* Content Layouts */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-desc {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .callout-box {
+      background: rgba(11, 77, 156, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    .callout-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .callout-text {
+      font-size: 20px;
+      font-weight: 700;
+      color: #FFFFFF;
+      line-height: 1.4;
+    }
+
+    /* Code block */
+    .code-box {
+      background: #060A17;
+      border: 1px solid #1E293B;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #38BDF8;
+      line-height: 1.4;
+      overflow-y: auto;
+      max-height: 320px;
+    }
+
+    /* Speaker Notes Bar (At bottom of slide) */
+    .speaker-tip {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 12.5px;
+      color: #CBD5E1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .speaker-badge {
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--accent-blue);
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      text-transform: uppercase;
+    }
+
+    /* Navigation Bar */
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: #080D1E;
+      border-top: 1px solid #1E293B;
+    }
+
+    .nav-btn {
+      background: #1E293B;
+      border: 1px solid #334155;
+      color: #FFFFFF;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover { background: #334155; }
+
+    .nav-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Keyboard Hint */
+    .keyboard-hint {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #64748B;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .kbd {
+      background: #1E293B;
+      color: #CBD5E1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="deck-container">
+
+    <!-- ==========================================
+         SLIDE 1: TITLE SLIDE
+         ========================================== -->
+    <div class="slide active" id="slide1">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span style="background: var(--sru-navy); color: #fff; font-weight: 800; font-size: 18px; padding: 4px 12px; border-radius: 6px;">SRU</span>
+        <span style="font-size: 12px; font-weight: 700; color: #94A3B8; letter-spacing: 0.5px;">DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING</span>
+      </div>
+
+      <div class="slide-body" style="justify-content: center;">
+        <div style="font-size: 16px; font-weight: 700; color: var(--accent-blue); margin-bottom: 8px;">
+          Product 11: Semaphore-Based Software Products
+        </div>
+        <h1 style="font-size: 46px; font-weight: 800; color: #FFFFFF; line-height: 1.15; margin-bottom: 16px;">
+          EV Charging Station<br>Allocation System
+        </h1>
+        <p style="font-size: 18px; color: #94A3B8; max-width: 800px; line-height: 1.5; margin-bottom: 24px;">
+          Synchronizing simultaneous charging requests using an Operating System <strong>Counting Semaphore</strong> with full <strong>Charger Lifecycle Management</strong>.
+        </p>
+
+        <div style="display: flex; gap: 12px;">
+          <span style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38BDF8; padding: 6px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600;">
+            Concept: Counting Semaphore (N=3)
+          </span>
+          <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34D399; padding: 6px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600;">
+            Feature: Available &rarr; Charging &rarr; Completed &rarr; Released
+          </span>
+        </div>
+      </div>
+
+      <div class="speaker-tip">
+        <span class="speaker-badge">Say this to Madam</span>
+        <span>"Good morning Madam. Today I am presenting Product 11: The EV Charging Station Allocation System, which solves resource contention using an OS Counting Semaphore."</span>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 2: PROBLEM STATEMENT
+         ========================================== -->
+    <div class="slide" id="slide2">
+      <div class="slide-top">
+        <div>
+          <div class="slide-tag">1. Problem Statement</div>
+          <div class="slide-title">The Challenge of Limited Resources</div>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="callout-box">
+          <div class="callout-title">Core Question from Project Specification</div>
+          <div class="callout-text">
+            &ldquo;More EVs request charging than the number of available charging points. How can the software limit simultaneous charging?&rdquo;
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card" style="border-top: 3px solid var(--accent-blue);">
+            <div class="card-title">1. Physical Limit</div>
+            <div class="card-desc">
+              The station has a fixed hardware capacity of <strong>3 charging bays</strong>. Connecting more vehicles than plugs causes physical overload.
+            </div>
+          </div>
+          <div class="card" style="border-top: 3px solid var(--accent-amber);">
+            <div class="card-title">2. Resource Contention</div>
+            <div class="card-desc">
+              When 5 EVs arrive at the same time, all 5 cannot be granted power immediately. Uncontrolled concurrency causes race conditions.
+            </div>
+          </div>
+          <div class="card" style="border-top: 3px solid var(--accent-green);">
+            <div class="card-title">3. The OS Solution</div>
+            <div class="card-desc">
+              The software limits active charging to 3 vehicles using a <strong>Counting Semaphore</strong>, placing remaining cars into a sleep/wait queue.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="speaker-tip">
+        <span class="speaker-badge">Say this to Madam</span>
+        <span>"The problem is that demand exceeds capacity. When 5 cars request power for only 3 plugs, software synchronization is required to prevent over-allocation."</span>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 3: COUNTING SEMAPHORE CONCEPT
+         ========================================== -->
+    <div class="slide" id="slide3">
+      <div class="slide-top">
+        <div>
+          <div class="slide-tag">2. Core OS Concept</div>
+          <div class="slide-title">Why a Counting Semaphore?</div>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title" style="color: var(--accent-blue);">How It Operates</div>
+            <div class="card-desc" style="display: flex; flex-direction: column; gap: 12px;">
+              <div><strong>1. Initialization:</strong> <code>sem = Semaphore(3)</code><br>Counter is initialized to integer 3 (representing 3 chargers).</div>
+              <div><strong>2. sem.acquire() [P operation]:</strong><br>Decrements counter. If counter &gt; 0, thread enters immediately. If counter == 0, thread <strong>blocks and sleeps</strong> in wait queue.</div>
+              <div><strong>3. sem.release() [V operation]:</strong><br>Increments counter and wakes up one blocked thread in FIFO order.</div>
+            </div>
+          </div>
+
+          <div class="card" style="background: rgba(16, 185, 129, 0.06); border-color: rgba(16, 185, 129, 0.3);">
+            <div class="card-title" style="color: var(--accent-green);">Counting Semaphore vs Mutex</div>
+            <div class="card-desc" style="display: flex; flex-direction: column; gap: 12px; color: #E2E8F0;">
+              <div><strong>Mutex (Binary Semaphore):</strong><br>Only permits a single entity (0 or 1). It would force 1 car to charge while 2 bays sit completely wasted!</div>
+              <div><strong>Counting Semaphore ($N = 3$):</strong><br>Allows exactly 3 threads to charge concurrently while throttling excess requests. Ensures 100% station utilization without conflicts.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="speaker-tip">
+        <span class="speaker-badge">Say this to Madam</span>
+        <span>"We use a Counting Semaphore instead of a Mutex because we have 3 identical resources. A Mutex would only allow 1 car at a time, leaving 2 bays wasted."</span>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 4: CHARGER LIFECYCLE
+         ========================================== -->
+    <div class="slide" id="slide4">
+      <div class="slide-top">
+        <div>
+          <div class="slide-tag">3. Unique Implementation Feature</div>
+          <div class="slide-title">The 4-Stage Charger Lifecycle</div>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div style="font-size: 14px; color: #94A3B8; margin-bottom: 20px;">
+          The software tracks the exact physical hardware transitions of each charging point:
+        </div>
+
+        <div class="grid-4">
+          <div class="card" style="border-top: 3px solid var(--accent-green); text-align: center;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--accent-green); margin-bottom: 4px;">STAGE 1</div>
+            <div style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px;">Available</div>
+            <div style="font-size: 13px; color: #94A3B8; line-height: 1.5;">
+              Charger is idle, plug docked.<br>Semaphore permit counter &gt; 0.
+            </div>
+          </div>
+
+          <div class="card" style="border-top: 3px solid var(--accent-blue); text-align: center;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--accent-blue); margin-bottom: 4px;">STAGE 2</div>
+            <div style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px;">Charging</div>
+            <div style="font-size: 13px; color: #94A3B8; line-height: 1.5;">
+              EV acquires permit.<br>Critical Section active.<br>Battery fills (0% &rarr; 100%).
+            </div>
+          </div>
+
+          <div class="card" style="border-top: 3px solid var(--accent-amber); text-align: center;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--accent-amber); margin-bottom: 4px;">STAGE 3</div>
+            <div style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px;">Completed</div>
+            <div style="font-size: 13px; color: #94A3B8; line-height: 1.5;">
+              Target SoC reached 100%.<br>Power automatically cuts off.
+            </div>
+          </div>
+
+          <div class="card" style="border-top: 3px solid var(--accent-purple); text-align: center;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--accent-purple); margin-bottom: 4px;">STAGE 4</div>
+            <div style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px;">Released</div>
+            <div style="font-size: 13px; color: #94A3B8; line-height: 1.5;">
+              Cable unplugged.<br><code>sem.release()</code> called.<br>Resets to Available.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="speaker-tip">
+        <span class="speaker-badge">Say this to Madam</span>
+        <span>"The unique feature is our 4-stage lifecycle: Available -> Charging -> Completed -> Released, guaranteeing clean handoffs between vehicles."</span>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 5: PARALLEL PROCESSING & CONTENTION
+         ========================================== -->
+    <div class="slide" id="slide5">
+      <div class="slide-top">
+        <div>
+          <div class="slide-tag">4. Parallel Execution</div>
+          <div class="slide-title">Handling Same-Resource Contention</div>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="callout-box" style="background: rgba(168, 85, 247, 0.12); border-color: rgba(168, 85, 247, 0.3);">
+          <div class="callout-title" style="color: var(--accent-purple);">Scenario Explained</div>
+          <div class="callout-text" style="font-size: 17px;">
+            &ldquo;What happens when 2 cars arrive in parallel and request the exact same charging point (Bay 01)?&rdquo;
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title" style="color: var(--accent-blue);">1. Mutual Exclusion (Mutex)</div>
+            <div class="card-desc" style="font-size: 13.5px; line-height: 1.6;">
+              &bull; Both threads arrive at the exact same millisecond.<br>
+              &bull; Physical hardware is non-shareable: Mutex lock grants Bay 01 to Car A.<br>
+              &bull; Car B encounters conflict and is placed in the <strong>BLOCKED state</strong> (sleeps without CPU spinning).
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="color: var(--accent-green);">2. Conflict Resolution Feature</div>
+            <div class="card-desc" style="font-size: 13.5px; line-height: 1.6;">
+              &bull; Dashboard displays conflict alert: <code>Car B BLOCKED on Bay 01</code>.<br>
+              &bull; <strong>Resolve Button:</strong> Clicking <em>&ldquo;Remove Conflict&rdquo;</em> dynamically reroutes Car B to free Bay 02!<br>
+              &bull; Result: Eliminates deadlock and charges both cars simultaneously.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="speaker-tip">
+        <span class="speaker-badge">Say this to Madam</span>
+        <span>"When 2 cars request Bay 1 in parallel, Mutual Exclusion serializes them: Car A charges while Car B blocks. Our resolve button can dynamically reroute Car B to Bay 2."</span>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 6: CODE EXPLANATION
+         ========================================== -->
+    <div class="slide" id="slide6">
+      <div class="slide-top">
+        <div>
+          <div class="slide-tag">5. Implementation</div>
+          <div class="slide-title">Python Multi-Threaded Backend</div>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="code-box">
+<span style="color:#64748B;"># 1. Imports</span>
+import threading, time
+
+<span style="color:#64748B;"># 2. Counting Semaphore for 3 chargers</span>
+computer_sem = threading.Semaphore(3)
+
+<span style="color:#64748B;"># 3. Thread worker function</span>
+def use_computer(student):
+    print(student, "is requesting a computer")
+    computer_sem.acquire()  <span style="color:#F59E0B;"># Blocks if count==0</span>
+    print(student, "got a computer")
+    time.sleep(2)           <span style="color:#10B981;"># Critical Section</span>
+    print(student, "finished using the computer")
+    computer_sem.release()  <span style="color:#A855F7;"># Signals wait thread</span>
+
+<span style="color:#64748B;"># 4. Spawning 5 concurrent threads</span>
+students = ["S1", "S2", "S3", "S4", "S5"]
+threads = []
+for student in students:
+    t = threading.Thread(target=use_computer, args=(student,))
+    threads.append(t); t.start()
+
+<span style="color:#64748B;"># 5. Barrier synchronization</span>
+for t in threads: t.join()
+print("All requests completed")
+          </div>
+
+          <div class="card" style="justify-content: space-between;">
+            <div>
+              <div class="card-title" style="color: var(--accent-blue);">Key Lines to Explain:</div>
+              <div class="card-desc" style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                <div><strong>Line 4:</strong> <code>Semaphore(3)</code> creates 3 permits.</div>
+                <div><strong>Line 8:</strong> <code>acquire()</code> decrements permit count; blocks threads S4 and S5.</div>
+                <div><strong>Line 10:</strong> <code>time.sleep(2)</code> simulates charging inside Critical Section.</div>
+                <div><strong>Line 12:</strong> <code>release()</code> increments count and wakes up waiting threads.</div>
+                <div><strong>Line 23:</strong> <code>join()</code> acts as a synchronization barrier.</div>
+              </div>
+            </div>
+            <div style="font-size: 11.5px; color: #64748B; font-family: 'JetBrains Mono', monospace;">
+              File: backend.py (Exact 25 lines)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="speaker-tip">
+        <span class="speaker-badge">Say this to Madam</span>
+        <span>"In backend.py, Semaphore(3) limits access. Threads S1, S2, S3 acquire permits immediately, while S4 and S5 block at acquire() until release() is called."</span>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SLIDE 7: CONCLUSION & LIVE DEMO
+         ========================================== -->
+    <div class="slide" id="slide7">
+      <div class="slide-top">
+        <div>
+          <div class="slide-tag">6. Conclusion</div>
+          <div class="slide-title">Summary & 24/7 Live Demonstration</div>
+        </div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-3" style="margin-bottom: 24px;">
+          <div class="card">
+            <div class="card-title">✔ Problem Solved</div>
+            <div class="card-desc">Throttled concurrent vehicle requests to match physical capacity without hardware damage.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">✔ OS Synchronized</div>
+            <div class="card-desc">Eliminated race conditions and busy-waiting using OS Counting Semaphores and Mutex Locks.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">✔ Visual Dashboard</div>
+            <div class="card-desc">Interactive UI with real-time battery progress, queue states, and conflict resolution.</div>
+          </div>
+        </div>
+
+        <div class="callout-box" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.4); text-align: center;">
+          <div class="callout-title" style="color: var(--accent-green);">24/7 Live Working Dashboard (GitHub Pages)</div>
+          <div style="font-size: 18px; font-weight: 700; color: #fff; margin-top: 6px;">
+            <a href="https://2503a52753-purna.github.io/OS-Product11-EV-Charging-System/" target="_blank" style="color: #38BDF8; text-decoration: none;">
+              https://2503a52753-purna.github.io/OS-Product11-EV-Charging-System/
+            </a>
+          </div>
+          <div style="font-size: 12px; color: #94A3B8; margin-top: 6px;">
+            Hosted globally on GitHub CDN &bull; Ready for live lab demonstration
+          </div>
+        </div>
+      </div>
+
+      <div class="speaker-tip">
+        <span class="speaker-badge">Say this to Madam</span>
+        <span>"In conclusion, our system provides fair, safe, and efficient resource allocation. I can now show the live working dashboard on GitHub Pages. Thank you!"</span>
+      </div>
+    </div>
+
+    <!-- Navigation Footer -->
+    <div class="nav-bar">
+      <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">
+        <span>&larr; Previous</span>
+      </button>
+
+      <div class="nav-counter" id="slideCounter">Slide 1 of 7</div>
+
+      <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">
+        <span>Next &rarr;</span>
+      </button>
+    </div>
+
+  </div>
+
+  <div class="keyboard-hint">
+    <span>Navigate: <span class="kbd">&larr;</span> <span class="kbd">&rarr;</span> or <span class="kbd">Space</span></span>
+    <span>&bull;</span>
+    <span>Full Screen: <span class="kbd">F11</span></span>
+    <span>&bull;</span>
+    <button onclick="window.print()" style="background: transparent; border: 1px solid #334155; color: #94A3B8; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+      Print / Save PDF
+    </button>
+  </div>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 7;
+
+    function showSlide(n) {
+      document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(`slide${n}`);
+      if (target) {
+        target.classList.add('active');
+        document.getElementById('slideCounter').textContent = `Slide ${n} of ${totalSlides}`;
+        document.getElementById('prevBtn').disabled = (n === 1);
+        document.getElementById('nextBtn').textContent = (n === totalSlides) ? "Finish" : "Next \u2192";
+      }
+    }
+
+    function changeSlide(direction) {
+      currentSlide += direction;
+      if (currentSlide < 1) currentSlide = 1;
+      if (currentSlide > totalSlides) currentSlide = totalSlides;
+      showSlide(currentSlide);
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        changeSlide(1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        changeSlide(-1);
+      }
+    });
+
+    // Initialize
+    showSlide(1);
+  </script>
+
+</body>
+</html>
