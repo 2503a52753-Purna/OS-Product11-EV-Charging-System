@@ -1,0 +1,2138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRU | Product 11: EV Charging Station Allocation System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sru-blue: #0b4d9c;
+      --sru-dark-blue: #083770;
+      --sru-light-blue: #e8f0fe;
+      --sru-cream: #fffde6;
+      --sru-border: #bfdbfe;
+      
+      --bg-dark: #0a0e17;
+      --bg-card: #111827;
+      --bg-card-subtle: #1a2234;
+      --border-subtle: #243046;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      
+      --state-available: #10b981;
+      --state-available-glow: rgba(16, 185, 129, 0.25);
+      --state-charging: #3b82f6;
+      --state-charging-glow: rgba(59, 130, 246, 0.3);
+      --state-completed: #f59e0b;
+      --state-completed-glow: rgba(245, 158, 11, 0.25);
+      --state-released: #8b5cf6;
+      --state-released-glow: rgba(139, 92, 246, 0.25);
+      --state-blocked: #ef4444;
+      --state-blocked-glow: rgba(239, 68, 68, 0.25);
+      
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Ambient background grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(11, 77, 156, 0.15) 0%, transparent 60%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 36px 36px, 36px 36px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px 24px 60px;
+      z-index: 1;
+    }
+
+    /* -----------------------------------------------------------------------
+       1. MODERN DASHBOARD TOPBAR
+       ----------------------------------------------------------------------- */
+    .dashboard-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 0 16px rgba(2, 132, 199, 0.4);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #f8fafc;
+    }
+
+    .brand-subtitle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .badge-accent {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .status-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 1.5s infinite;
+    }
+
+    /* -----------------------------------------------------------------------
+       2. TOP STATS & SEMAPHORE PERMITS MONITOR
+       ----------------------------------------------------------------------- */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* Semaphore Token Vault Card */
+    .semaphore-vault {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sem-value-display {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .sem-large-number {
+      font-size: 48px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: #38bdf8;
+      line-height: 1;
+    }
+
+    .sem-max {
+      font-size: 20px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .sem-state-banner {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .sem-state-banner.normal {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .sem-state-banner.saturated {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    /* Visual Permit Tokens */
+    .token-slots-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .permit-token {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px 8px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .permit-token.available {
+      border-color: var(--state-available);
+      background: rgba(16, 185, 129, 0.08);
+      box-shadow: 0 0 15px var(--state-available-glow);
+    }
+
+    .permit-token.acquired {
+      border-color: var(--state-charging);
+      background: rgba(59, 130, 246, 0.08);
+      box-shadow: 0 0 15px var(--state-charging-glow);
+    }
+
+    .permit-token .token-icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .permit-token .token-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .permit-token .token-status {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .os-concept-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px dashed var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 12px;
+      line-height: 1.4;
+    }
+
+    .os-concept-note strong {
+      color: #e2e8f0;
+    }
+
+    /* Stats Ribbon */
+    .stats-ribbon {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .stat-box {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .stat-val {
+      font-size: 24px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* -----------------------------------------------------------------------
+       3. CHARGING BAYS - THE 4-STAGE LIFECYCLE
+       Available -> Charging -> Completed -> Released
+       ----------------------------------------------------------------------- */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #f1f5f9;
+    }
+
+    .section-title .badge {
+      background: var(--sru-blue);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .bays-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .bay-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .bay-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    /* State Accent Top Bar */
+    .bay-accent-bar {
+      height: 4px;
+      width: 100%;
+      background: var(--state-available);
+      transition: background 0.3s ease;
+    }
+
+    .bay-card.state-available .bay-accent-bar { background: var(--state-available); }
+    .bay-card.state-charging .bay-accent-bar { background: var(--state-charging); }
+    .bay-card.state-completed .bay-accent-bar { background: var(--state-completed); }
+    .bay-card.state-released .bay-accent-bar { background: var(--state-released); }
+
+    .bay-card-inner {
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .bay-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .bay-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bay-state-pill {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+    }
+
+    .bay-card.state-available .bay-state-pill {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--state-available);
+      color: #34d399;
+    }
+    .bay-card.state-charging .bay-state-pill {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid var(--state-charging);
+      color: #60a5fa;
+      animation: pulse-glow 1.5s infinite alternate;
+    }
+    .bay-card.state-completed .bay-state-pill {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--state-completed);
+      color: #fbbf24;
+    }
+    .bay-card.state-released .bay-state-pill {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid var(--state-released);
+      color: #c084fc;
+    }
+
+    /* 4-Stage Lifecycle Stepper in each bay card */
+    .lifecycle-stepper {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px;
+      margin-bottom: 16px;
+    }
+
+    .lifecycle-step {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: #64748b;
+      padding: 4px 2px;
+      border-radius: 4px;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .lifecycle-step.active {
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .bay-card.state-available .lifecycle-step.step-available.active {
+      background: var(--state-available);
+      color: #ffffff;
+      box-shadow: 0 0 10px var(--state-available-glow);
+    }
+    .bay-card.state-charging .lifecycle-step.step-charging.active {
+      background: var(--state-charging);
+      color: #ffffff;
+      box-shadow: 0 0 10px var(--state-charging-glow);
+    }
+    .bay-card.state-completed .lifecycle-step.step-completed.active {
+      background: var(--state-completed);
+      color: #ffffff;
+      box-shadow: 0 0 10px var(--state-completed-glow);
+    }
+    .bay-card.state-released .lifecycle-step.step-released.active {
+      background: var(--state-released);
+      color: #ffffff;
+      box-shadow: 0 0 10px var(--state-released-glow);
+    }
+
+    /* Vehicle Parked Graphic Area */
+    .bay-visual-stage {
+      background: radial-gradient(circle at 50% 60%, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    /* Charging cable laser line */
+    .charging-laser {
+      position: absolute;
+      top: 15px;
+      right: 30px;
+      width: 4px;
+      height: 45px;
+      background: linear-gradient(to bottom, #38bdf8, #818cf8);
+      border-radius: 2px;
+      display: none;
+      box-shadow: 0 0 10px #38bdf8;
+    }
+
+    .bay-card.state-charging .charging-laser {
+      display: block;
+      animation: cable-zap 1s infinite alternate;
+    }
+
+    .car-svg-container {
+      width: 140px;
+      height: 65px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s ease;
+    }
+
+    .bay-card.state-available .car-svg-container {
+      opacity: 0.15;
+      filter: grayscale(1);
+    }
+
+    .bay-card.state-charging .car-svg-container {
+      opacity: 1;
+      filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.4));
+      transform: scale(1.02);
+    }
+
+    .bay-card.state-completed .car-svg-container {
+      opacity: 1;
+      filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.4));
+    }
+
+    .bay-card.state-released .car-svg-container {
+      opacity: 0.6;
+      transform: translateY(-8px);
+      transition: transform 0.4s ease;
+    }
+
+    .parked-ev-details {
+      margin-top: 10px;
+      text-align: center;
+      min-height: 38px;
+    }
+
+    .parked-ev-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      font-family: var(--font-mono);
+    }
+
+    .parked-ev-model {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Battery Progress Gauge */
+    .battery-progress-wrap {
+      margin-bottom: 12px;
+    }
+
+    .battery-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .battery-bar-bg {
+      height: 10px;
+      background: #1e293b;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .battery-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
+      border-radius: 6px;
+      transition: width 0.3s ease;
+    }
+
+    .bay-card.state-charging .battery-bar-fill {
+      background: linear-gradient(90deg, #38bdf8 0%, #3b82f6 50%, #60a5fa 100%);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    }
+
+    .bay-card.state-completed .battery-bar-fill {
+      background: #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+    }
+
+    .bay-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.2);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+    }
+
+    .bay-meta-item span {
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    /* -----------------------------------------------------------------------
+       4. EV WAITING QUEUE (DEMONSTRATING SEMAPHORE BLOCKING)
+       ----------------------------------------------------------------------- */
+    .queue-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .queue-lane {
+      min-height: 80px;
+      background: #0d131f;
+      border: 1px dashed #334155;
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      overflow-x: auto;
+    }
+
+    .queue-empty-msg {
+      color: #64748b;
+      font-size: 13px;
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .queued-ev-card {
+      background: #1e293b;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 190px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: slide-in 0.3s ease;
+    }
+
+    .queued-ev-icon {
+      font-size: 20px;
+    }
+
+    .queued-ev-info {
+      flex: 1;
+    }
+
+    .queued-ev-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      font-family: var(--font-mono);
+    }
+
+    .queued-ev-status {
+      font-size: 10.5px;
+      color: #f87171;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* -----------------------------------------------------------------------
+       5. INTERACTIVE CONTROL CENTER & ACTION BUTTONS
+       ----------------------------------------------------------------------- */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .control-buttons-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      user-select: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--sru-blue) 0%, #2563eb 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+    .btn-success:hover {
+      background: linear-gradient(135deg, #047857 0%, #059669 100%);
+      transform: translateY(-1px);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+      color: #ffffff;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    .btn-secondary {
+      background: var(--bg-card-subtle);
+      border-color: var(--border-subtle);
+      color: #cbd5e1;
+    }
+    .btn-secondary:hover {
+      background: #243046;
+      color: #ffffff;
+    }
+
+    .btn-purple {
+      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
+      border: 1px solid rgba(216, 180, 254, 0.3);
+    }
+    .btn-purple:hover {
+      background: linear-gradient(135deg, #6d28d9 0%, #9333ea 100%);
+      transform: translateY(-1px);
+    }
+
+    /* Parallel Contention Card & Elements */
+    .parallel-contention-panel {
+      background: linear-gradient(180deg, rgba(124, 58, 237, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.15);
+    }
+
+    .parallel-threads-grid {
+      display: grid;
+      grid-template-columns: 1fr 80px 1fr;
+      gap: 16px;
+      align-items: center;
+      margin-top: 14px;
+      margin-bottom: 14px;
+    }
+
+    .parallel-thread-card {
+      background: #0f172a;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .parallel-thread-card.active-lock {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+    }
+
+    .parallel-thread-card.blocked-lock {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.08);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
+      animation: pulse-border 1.5s infinite alternate;
+    }
+
+    @keyframes pulse-border {
+      0% { border-color: rgba(239, 68, 68, 0.4); }
+      100% { border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+    }
+
+    .vs-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1e1b4b;
+      border: 2px solid #a855f7;
+      color: #e9d5ff;
+      font-weight: 800;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      margin: 0 auto;
+      box-shadow: 0 0 14px rgba(168, 85, 247, 0.4);
+    }
+
+    .parallel-status-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      margin-top: 6px;
+    }
+
+    .parallel-status-tag.waiting { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .parallel-status-tag.granted { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .parallel-status-tag.blocked { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    .parallel-status-tag.done { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+
+    /* Custom EV Dispatch Form */
+    .custom-dispatch-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr 100px auto;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      align-items: center;
+    }
+
+    .form-input, .form-select {
+      background: #0f172a;
+      border: 1px solid var(--border-subtle);
+      color: #f8fafc;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      outline: none;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: #38bdf8;
+    }
+
+    /* -----------------------------------------------------------------------
+       6. TELEMETRY LOG CONSOLE (SYNTAX HIGHLIGHTED)
+       ----------------------------------------------------------------------- */
+    .console-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .console-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .console-window {
+      background: #0a0f1d;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      height: 220px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .log-line {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      line-height: 1.5;
+    }
+
+    .log-time {
+      color: #64748b;
+    }
+
+    .log-tag {
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 10.5px;
+      text-transform: uppercase;
+    }
+
+    .log-tag.REQUEST { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .log-tag.ACQUIRE { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .log-tag.COMPLETED { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .log-tag.RELEASED { background: rgba(139, 92, 246, 0.15); color: #c084fc; }
+    .log-tag.FREE { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .log-tag.RESET { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    .log-msg {
+      color: #e2e8f0;
+      flex: 1;
+    }
+
+    /* -----------------------------------------------------------------------
+       ANIMATIONS
+       ----------------------------------------------------------------------- */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.9); }
+    }
+
+    @keyframes pulse-glow {
+      0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+      100% { box-shadow: 0 0 16px rgba(59, 130, 246, 0.7); }
+    }
+
+    @keyframes cable-zap {
+      0% { opacity: 0.4; }
+      100% { opacity: 1; filter: drop-shadow(0 0 6px #38bdf8); }
+    }
+
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateX(-15px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .bays-grid { grid-template-columns: 1fr; }
+      .stats-ribbon { grid-template-columns: repeat(2, 1fr); }
+      .controls-grid { grid-template-columns: 1fr; }
+      .sru-product-row { grid-template-columns: 1fr; }
+      .sru-product-id { border-right: none; border-bottom: 1px solid #cbd5e1; }
+      .sru-spec-table th, .sru-spec-table td { display: block; width: 100%; }
+      .custom-dispatch-form { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+
+  <div class="container">
+
+    <!-- =====================================================================
+         1. MODERN DASHBOARD TOPBAR
+         ===================================================================== -->
+    <header class="dashboard-topbar">
+      <div class="topbar-brand">
+        <div class="brand-icon">⚡</div>
+        <div>
+          <div class="brand-title">EV Charging Station Allocation System</div>
+          <div class="brand-subtitle">
+            <span class="badge-accent">Product 11</span>
+            <span>OS Concept: Counting Semaphore (Capacity = 3)</span>
+            <span>&bull;</span>
+            <span>Lifecycle: Available &rarr; Charging &rarr; Completed &rarr; Released</span>
+          </div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="status-badge-pill">
+          <span class="status-dot" id="backendDot"></span>
+          <span id="backendStatusText">Interactive OS Engine (Active)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- =====================================================================
+         2. SEMAPHORE PERMITS MONITOR & STATS
+         ===================================================================== -->
+    <div class="dashboard-grid">
+      
+      <!-- Counting Semaphore Vault Card -->
+      <div class="card semaphore-vault">
+        <div>
+          <div class="card-title">
+            <span>OS Counting Semaphore</span>
+            <span style="font-family: var(--font-mono); color: #38bdf8;">threading.Semaphore(3)</span>
+          </div>
+
+          <div class="sem-value-display">
+            <div class="sem-large-number" id="semValueDisplay">3</div>
+            <div class="sem-max">/ 3 Permits Available</div>
+          </div>
+
+          <div class="sem-state-banner normal" id="semBanner">
+            <span id="semBannerDot">🟢</span>
+            <span id="semBannerText">Permits Available: Incoming EV threads acquire immediately</span>
+          </div>
+
+          <!-- 3 Visual Permit Tokens -->
+          <div class="token-slots-container">
+            <div class="permit-token available" id="token1">
+              <div class="token-icon">🔑</div>
+              <div class="token-label">Permit 1</div>
+              <div class="token-status" id="tokenStatus1">Available</div>
+            </div>
+            <div class="permit-token available" id="token2">
+              <div class="token-icon">🔑</div>
+              <div class="token-label">Permit 2</div>
+              <div class="token-status" id="tokenStatus2">Available</div>
+            </div>
+            <div class="permit-token available" id="token3">
+              <div class="token-icon">🔑</div>
+              <div class="token-label">Permit 3</div>
+              <div class="token-status" id="tokenStatus3">Available</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="os-concept-note">
+          <strong>OS Mechanism:</strong> When <code>sem.acquire()</code> is called, the counter decrements. If permits reach 0, newly arriving EV threads <em>sleep and block</em> until an active vehicle calls <code>sem.release()</code>.
+        </div>
+      </div>
+
+      <!-- Station KPIs Ribbon -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card-title">
+          <span>Charging Station Real-Time Telemetry</span>
+          <span style="color: #10b981;">⚡ DC Ultra-Fast Grid Active</span>
+        </div>
+
+        <div class="stats-ribbon">
+          <div class="stat-box">
+            <div class="stat-label">Active Charging Bays</div>
+            <div class="stat-val" id="activeBaysVal">0 <span style="font-size: 14px; color: #64748b;">/ 3</span></div>
+            <div class="stat-sub" id="activeBaysSub">Station load: 0%</div>
+          </div>
+
+          <div class="stat-box">
+            <div class="stat-label">Blocked In Wait Queue</div>
+            <div class="stat-val" id="queueCountVal" style="color: #f87171;">0</div>
+            <div class="stat-sub">Threads sleeping on sem</div>
+          </div>
+
+          <div class="stat-box">
+            <div class="stat-label">Total EVs Served</div>
+            <div class="stat-val" id="totalEvsVal">0</div>
+            <div class="stat-sub">Completed lifecycle</div>
+          </div>
+
+          <div class="stat-box">
+            <div class="stat-label">Total Energy Dispensed</div>
+            <div class="stat-val" id="totalEnergyVal" style="color: #38bdf8;">0.0 <span style="font-size: 14px;">kWh</span></div>
+            <div class="stat-sub">Clean solar/grid mix</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between;">
+          <span>Unique Feature: <strong>Charger Lifecycle Management</strong></span>
+          <span>Thread Safety: <strong>Mutex Locked Critical Section</strong></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =====================================================================
+         3. CHARGING BAYS - THE 4-STAGE LIFECYCLE
+         Available -> Charging -> Completed -> Released
+         ===================================================================== -->
+    <div class="section-header">
+      <div class="section-title">
+        <span>⚡ Physical Charging Bays</span>
+        <span class="badge">Unique Implementation Feature</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Lifecycle: <span style="color: #34d399;">Available</span> &rarr; <span style="color: #60a5fa;">Charging</span> &rarr; <span style="color: #fbbf24;">Completed</span> &rarr; <span style="color: #c084fc;">Released</span>
+      </div>
+    </div>
+
+    <div class="bays-grid" id="baysGrid">
+      <!-- Bay 1, 2, 3 generated dynamically -->
+    </div>
+
+    <!-- =====================================================================
+         4. EV WAITING QUEUE (DEMONSTRATING SEMAPHORE BLOCKING)
+         ===================================================================== -->
+    <div class="queue-section">
+      <div class="card-title">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span>🛑 Semaphore Waiting Queue</span>
+          <span style="font-size: 12px; font-weight: 500; color: #ef4444;" id="queueHeaderCount">(0 EVs waiting)</span>
+        </span>
+        <span style="font-size: 12px; font-family: var(--font-mono); color: #f87171;">OS State: BLOCKED THREADS</span>
+      </div>
+
+      <div class="queue-lane" id="queueLane">
+        <div class="queue-empty-msg" id="emptyQueueMsg">
+          <span>✨ No vehicles in waiting queue. All incoming EVs enter charging bays immediately.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         5. INTERACTIVE CONTROL CENTER
+         ===================================================================== -->
+    <div class="controls-grid">
+      
+      <div class="card">
+        <div class="card-title">
+          <span>Simulation Dispatch Controls</span>
+          <span style="color: #38bdf8;">Interactive Concurrency Testing</span>
+        </div>
+
+        <div class="control-buttons-wrap">
+          <!-- User code default batch -->
+          <button class="btn btn-primary" id="btnRunBatch">
+            <span>⚡ Run Default S1..S5 Threads</span>
+          </button>
+
+          <!-- Quick single EV -->
+          <button class="btn btn-success" id="btnQuickDispatch">
+            <span>🚗 Dispatch Single EV</span>
+          </button>
+
+          <!-- Parallel Processing Contest button -->
+          <button class="btn btn-purple" id="btnQuickParallel">
+            <span>⚡ Execute Parallel Execution (Same Charger)</span>
+          </button>
+
+          <!-- Remove Conflict button (Appears automatically after conflict occurs) -->
+          <button class="btn btn-danger" id="btnRemoveConflict" style="display: none; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);">
+            <span>❌ Remove / Resolve Conflict</span>
+          </button>
+
+          <!-- Rush Hour simulation (triggers heavy queueing) -->
+          <button class="btn btn-warning" id="btnRushHour">
+            <span>🚨 Rush Hour (8 EVs Concurrently)</span>
+          </button>
+
+          <!-- Reset -->
+          <button class="btn btn-secondary" id="btnReset">
+            <span>🔄 Reset Station</span>
+          </button>
+
+          <!-- Audio toggle -->
+          <button class="btn btn-secondary" id="btnAudioToggle">
+            <span id="audioIcon">🔊</span> <span id="audioLabel">Sound FX: On</span>
+          </button>
+        </div>
+
+        <!-- Custom Dispatch Form -->
+        <div class="custom-dispatch-form">
+          <input type="text" class="form-input" id="customEvName" placeholder="EV Name (e.g. EV-6 / S6)" value="EV-6">
+          <select class="form-select" id="customEvModel">
+            <option value="Tesla Model 3">Tesla Model 3</option>
+            <option value="Tata Nexon EV">Tata Nexon EV</option>
+            <option value="Porsche Taycan">Porsche Taycan</option>
+            <option value="Hyundai Ioniq 5">Hyundai Ioniq 5</option>
+            <option value="Rivian R1T">Rivian R1T</option>
+          </select>
+          <select class="form-select" id="customDuration">
+            <option value="2.0">Fast (2s)</option>
+            <option value="3.5" selected>Normal (3.5s)</option>
+            <option value="5.0">Long (5s)</option>
+          </select>
+          <button class="btn btn-primary" id="btnCustomDispatch">
+            <span>Dispatch EV Thread</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Concept Guide Box -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card-title">
+          <span>OS Concept Cheat-Sheet</span>
+          <span style="color: #f59e0b;">Viva Q&A</span>
+        </div>
+        <div style="font-size: 12.5px; color: #cbd5e1; display: flex; flex-direction: column; gap: 8px;">
+          <div>
+            <strong style="color: #38bdf8;">Q: Why Counting Semaphore?</strong><br>
+            <span style="color: #94a3b8;">Unlike a Mutex (binary 0/1), a Counting Semaphore manages $N > 1$ identical resources concurrently without race conditions.</span>
+          </div>
+          <div>
+            <strong style="color: #34d399;">Q: What is the unique feature?</strong><br>
+            <span style="color: #94a3b8;">The 4-stage lifecycle: <code>Available &rarr; Charging &rarr; Completed &rarr; Released</code>, mapping physical charger hardware states cleanly to OS thread life.</span>
+          </div>
+          <div>
+            <strong style="color: #c084fc;">Q: What happens if 2 cars request the SAME charger in parallel?</strong><br>
+            <span style="color: #94a3b8;">Mutual Exclusion (Mutex) arbitrates: Thread 1 enters the Critical Section, while Thread 2 is <strong>BLOCKED</strong>. When Thread 1 finishes and calls <code>release()</code>, Thread 2 is signaled and unblocked.</span>
+          </div>
+        </div>
+        <div style="margin-top: 10px; font-size: 11px; color: #64748b; font-family: var(--font-mono);">
+          Python: <code>threading.Semaphore(3)</code> &bull; Resource Lock
+        </div>
+      </div>
+
+    </div>
+
+
+
+    <!-- =====================================================================
+         6. LINE-BY-LINE BACKEND.PY CODE EXPLAINER (FOR VIVA / PRESENTATION)
+         ===================================================================== -->
+    <div class="card" style="margin-bottom: 24px; border-color: rgba(56, 189, 248, 0.3);">
+      <div class="card-title">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span>📖 Backend Code Reference (Line-by-Line Viva Explainer)</span>
+          <span style="font-size: 11px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 4px; font-family: var(--font-mono);">backend.py</span>
+        </span>
+        <span style="font-size: 12px; color: #38bdf8;">OS Theory &amp; Code Mapping</span>
+      </div>
+
+      <div style="font-size: 13px; color: #cbd5e1; margin-bottom: 14px; line-height: 1.5;">
+        This table breaks down your exact 25-line <code>backend.py</code> script and explains how each line directly implements the OS Concepts and the <strong>EV Charging Station Allocation System (Product 11)</strong>:
+      </div>
+
+      <div style="background: #090d16; border: 1px solid var(--border-subtle); border-radius: 8px; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+          <thead>
+            <tr style="background: #111827; border-bottom: 1px solid #1f293d; color: #94a3b8; font-family: var(--font-mono); font-size: 11px;">
+              <th style="padding: 10px 14px; width: 60px;">Lines</th>
+              <th style="padding: 10px 14px; width: 320px;">Code in backend.py</th>
+              <th style="padding: 10px 14px;">Operating System Concept &amp; Slide Mapping</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid #1a2234;">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #64748b;">1–2</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #38bdf8;">import threading<br>import time</td>
+              <td style="padding: 10px 14px; color: #cbd5e1;">Imports Python's multi-threading library for OS concurrency primitives (Semaphores &amp; Threads) and time simulation.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1a2234; background: rgba(16, 185, 129, 0.04);">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #10b981; font-weight: 700;">4</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #34d399; font-weight: 700;">computer_sem = threading.Semaphore(3)</td>
+              <td style="padding: 10px 14px; color: #e2e8f0;">
+                <strong style="color: #34d399;">Main OS Concept: Counting Semaphore.</strong><br>
+                Initializes a semaphore with a value of <strong>3</strong> (representing 3 available charging points / computers). Limits simultaneous access to at most 3 threads at any given moment.
+              </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1a2234;">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #64748b;">6</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #f1f5f9;">def use_computer(student):</td>
+              <td style="padding: 10px 14px; color: #cbd5e1;">The worker function executed concurrently by each student thread (representing an incoming EV).</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1a2234;">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #64748b;">7</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #94a3b8;">print(student, "is requesting a computer")</td>
+              <td style="padding: 10px 14px; color: #cbd5e1;"><strong style="color: #38bdf8;">Stage 0 (Arrival):</strong> The EV announces its request to use a charging point and prepares to enter the wait queue.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1a2234; background: rgba(239, 68, 68, 0.05);">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #f87171; font-weight: 700;">8</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #f87171; font-weight: 700;">computer_sem.acquire()</td>
+              <td style="padding: 10px 14px; color: #e2e8f0;">
+                <strong style="color: #f87171;">Semaphore Wait (P operation):</strong><br>
+                Decrements the semaphore counter. If counter &gt; 0, thread enters immediately. If counter == 0 (all 3 chargers occupied), the calling thread <strong>blocks and sleeps</strong> in the OS waiting queue until a permit is released.
+              </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1a2234; background: rgba(59, 130, 246, 0.05);">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #60a5fa;">9–10</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #60a5fa;">print(student, "got a computer")<br>time.sleep(2)</td>
+              <td style="padding: 10px 14px; color: #e2e8f0;">
+                <strong style="color: #60a5fa;">Lifecycle: Available &rarr; Charging (Critical Section):</strong><br>
+                Permit acquired! The thread enters the critical section and simulates charging the vehicle for 2 seconds.
+              </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1a2234; background: rgba(245, 158, 11, 0.05);">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #fbbf24;">11</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #fbbf24;">print(student, "finished using the computer")</td>
+              <td style="padding: 10px 14px; color: #e2e8f0;">
+                <strong style="color: #fbbf24;">Lifecycle: Charging &rarr; Completed:</strong><br>
+                Charging process finishes (battery reached 100%).
+              </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1a2234; background: rgba(139, 92, 246, 0.05);">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #c084fc; font-weight: 700;">12</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #c084fc; font-weight: 700;">computer_sem.release()</td>
+              <td style="padding: 10px 14px; color: #e2e8f0;">
+                <strong style="color: #c084fc;">Lifecycle: Completed &rarr; Released (V operation):</strong><br>
+                Increments the semaphore count and unblocks/wakes up the next waiting thread in the queue.
+              </td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1a2234;">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #64748b;">14–15</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #cbd5e1;">students = ["S1", "S2", "S3", "S4", "S5"]<br>threads = []</td>
+              <td style="padding: 10px 14px; color: #cbd5e1;">5 requesting entities (EVs) competing for only 3 chargers, creating resource contention.</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #1a2234;">
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #64748b;">17–20</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #cbd5e1;">for student in students:<br>&nbsp;&nbsp;t = threading.Thread(...)<br>&nbsp;&nbsp;threads.append(t)<br>&nbsp;&nbsp;t.start()</td>
+              <td style="padding: 10px 14px; color: #cbd5e1;">Spawns 5 concurrent threads and starts them simultaneously. Demonstrates concurrent request arrival.</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #64748b;">22–25</td>
+              <td style="padding: 10px 14px; font-family: var(--font-mono); color: #cbd5e1;">for t in threads:<br>&nbsp;&nbsp;t.join()<br>print("All requests completed")</td>
+              <td style="padding: 10px 14px; color: #cbd5e1;"><strong style="color: #38bdf8;">Barrier Synchronization:</strong> Main thread waits for all 5 child threads to finish before printing completion.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         7. REAL-TIME OS TELEMETRY CONSOLE
+         ===================================================================== -->
+    <div class="console-section">
+      <div class="console-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 14px; font-weight: 700; color: #f8fafc;">Live Operating System Event Stream</span>
+          <span style="font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-family: var(--font-mono);">
+            Thread Safe Lock &amp; Semaphore Trace
+          </span>
+        </div>
+        <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" id="btnClearLogs">
+          Clear Console
+        </button>
+      </div>
+
+      <div class="console-window" id="consoleWindow">
+        <!-- Log entries rendered here -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Audio Synthesizer (Zero external dependencies) -->
+  <script>
+    // Web Audio API Sound Generator for futuristic tactile feedback
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playBeep(freq, type, duration, gainVal = 0.05) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playAcquireSound() {
+      playBeep(440, 'sine', 0.15, 0.06);
+      setTimeout(() => playBeep(587.33, 'sine', 0.25, 0.06), 80);
+    }
+
+    function playCompleteSound() {
+      playBeep(523.25, 'triangle', 0.2, 0.08);
+      setTimeout(() => playBeep(659.25, 'triangle', 0.2, 0.08), 100);
+      setTimeout(() => playBeep(783.99, 'triangle', 0.4, 0.08), 200);
+    }
+
+    function playBlockSound() {
+      playBeep(220, 'sawtooth', 0.2, 0.04);
+    }
+  </script>
+
+  <!-- =====================================================================
+       CLIENT SIMULATION ENGINE + LIVE BACKEND SYNC
+       Ensures 100% interactive operation standalone OR connected to backend.py
+       ===================================================================== -->
+  <script>
+    // State representation
+    const TOTAL_CHARGERS = 3;
+    let isConnectedToPython = false;
+    let checkBackendInterval = null;
+
+    // Local client-side simulation state (used if python backend is not currently running)
+    let localState = {
+      sem_capacity: TOTAL_CHARGERS,
+      sem_value: TOTAL_CHARGERS,
+      chargers: [
+        { id: 1, name: "Charging Bay 1", state: "Available", ev: null, car_model: null, progress: 0, power_kw: 0, energy_kwh: 0 },
+        { id: 2, name: "Charging Bay 2", state: "Available", ev: null, car_model: null, progress: 0, power_kw: 0, energy_kwh: 0 },
+        { id: 3, name: "Charging Bay 3", state: "Available", ev: null, car_model: null, progress: 0, power_kw: 0, energy_kwh: 0 }
+      ],
+      waiting_queue: [],
+      stats: {
+        total_evs_served: 0,
+        total_energy_kwh: 0.0
+      },
+      logs: []
+    };
+
+    let nextEvId = 1;
+
+    // SVG Car template with futuristic neon lines
+    function getCarSvg(model, state) {
+      let carColor = "#38bdf8";
+      if (model.includes("Nexon")) carColor = "#10b981";
+      if (model.includes("Porsche")) carColor = "#f59e0b";
+      if (model.includes("Ioniq")) carColor = "#818cf8";
+      if (model.includes("Rivian")) carColor = "#f97316";
+
+      return `
+        <svg viewBox="0 0 160 70" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Car Body Outline -->
+          <rect x="25" y="16" width="110" height="38" rx="14" fill="#1e293b" stroke="${carColor}" stroke-width="2.5"/>
+          <!-- Windshield / Roof -->
+          <path d="M48 20L62 28H100L114 20H48Z" fill="#0f172a" stroke="${carColor}" stroke-width="1.5"/>
+          <!-- Headlights -->
+          <rect x="132" y="22" width="4" height="6" rx="2" fill="${state === 'Charging' ? '#67e8f9' : '#94a3b8'}"/>
+          <rect x="132" y="42" width="4" height="6" rx="2" fill="${state === 'Charging' ? '#67e8f9' : '#94a3b8'}"/>
+          <!-- Taillights -->
+          <rect x="24" y="22" width="3" height="6" rx="1.5" fill="#f87171"/>
+          <rect x="24" y="42" width="3" height="6" rx="1.5" fill="#f87171"/>
+          <!-- Wheels -->
+          <rect x="42" y="10" width="18" height="6" rx="3" fill="#090d16" stroke="#475569" stroke-width="1"/>
+          <rect x="102" y="10" width="18" height="6" rx="3" fill="#090d16" stroke="#475569" stroke-width="1"/>
+          <rect x="42" y="54" width="18" height="6" rx="3" fill="#090d16" stroke="#475569" stroke-width="1"/>
+          <rect x="102" y="54" width="18" height="6" rx="3" fill="#090d16" stroke="#475569" stroke-width="1"/>
+          <!-- Charging Port Pulse -->
+          ${state === 'Charging' ? `
+            <circle cx="70" cy="16" r="4" fill="#38bdf8">
+              <animate attributeName="r" values="3;6;3" dur="1.2s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="1;0.4;1" dur="1.2s" repeatCount="indefinite"/>
+            </circle>
+          ` : ''}
+        </svg>
+      `;
+    }
+
+    // Render charging bays
+    function renderBays(chargers) {
+      const container = document.getElementById("baysGrid");
+      container.innerHTML = chargers.map(ch => {
+        const stateClass = `state-${ch.state.toLowerCase()}`;
+        const hasEv = ch.ev !== null;
+        
+        return `
+          <div class="bay-card ${stateClass}" id="bayCard${ch.id}">
+            <div class="bay-accent-bar"></div>
+            <div class="bay-card-inner">
+              
+              <div class="bay-header">
+                <div class="bay-name">
+                  <span>⚡ Bay 0${ch.id}</span>
+                </div>
+                <div class="bay-state-pill">
+                  <span>●</span> ${ch.state}
+                </div>
+              </div>
+
+              <!-- 4-Stage Lifecycle Stepper -->
+              <div class="lifecycle-stepper">
+                <div class="lifecycle-step step-available ${ch.state === 'Available' ? 'active' : ''}">
+                  1. Available
+                </div>
+                <div class="lifecycle-step step-charging ${ch.state === 'Charging' ? 'active' : ''}">
+                  2. Charging
+                </div>
+                <div class="lifecycle-step step-completed ${ch.state === 'Completed' ? 'active' : ''}">
+                  3. Completed
+                </div>
+                <div class="lifecycle-step step-released ${ch.state === 'Released' ? 'active' : ''}">
+                  4. Released
+                </div>
+              </div>
+
+              <!-- Visual Vehicle Parked Area -->
+              <div class="bay-visual-stage">
+                <div class="charging-laser"></div>
+                <div class="car-svg-container">
+                  ${getCarSvg(ch.car_model || "Tesla", ch.state)}
+                </div>
+                <div class="parked-ev-details">
+                  <div class="parked-ev-name">
+                    ${hasEv ? ch.ev : "<span style='color:#64748b; font-weight:400;'>Bay Empty (Ready)</span>"}
+                  </div>
+                  <div class="parked-ev-model">
+                    ${hasEv ? ch.car_model : "CCS2 Fast Plug Docked"}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Battery Progress Gauge -->
+              <div class="battery-progress-wrap">
+                <div class="battery-header">
+                  <span>Battery State of Charge</span>
+                  <span><strong>${ch.progress || 0}%</strong></span>
+                </div>
+                <div class="battery-bar-bg">
+                  <div class="battery-bar-fill" style="width: ${ch.progress || 0}%;"></div>
+                </div>
+              </div>
+
+              <!-- Bay Telemetry -->
+              <div class="bay-meta-grid">
+                <div class="bay-meta-item">Power: <span>${ch.state === 'Charging' ? (ch.power_kw || 120) + ' kW' : '0 kW'}</span></div>
+                <div class="bay-meta-item">Energy: <span>${ch.energy_kwh || 0.0} kWh</span></div>
+              </div>
+
+              ${ch.contending_ev ? `
+                <div style="margin-top: 8px; background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.6); color: #fca5a5; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                  <div>
+                    <span>⚠️ Conflict:</span>
+                    <span style="color:#ffffff;">${ch.contending_ev}</span>
+                    <span style="background:#ef4444; color:#ffffff; padding: 1px 4px; border-radius: 3px; font-size: 9px; margin-left: 4px;">BLOCKED</span>
+                  </div>
+                  <button onclick="removeParallelConflict()" style="background: #ef4444; border: 1px solid #ffffff; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; cursor: pointer; white-space: nowrap;">Remove Conflict</button>
+                </div>
+              ` : ''}
+
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // Render Waiting Queue
+    function renderQueue(queue) {
+      const lane = document.getElementById("queueLane");
+      const headerCount = document.getElementById("queueHeaderCount");
+      const emptyMsg = document.getElementById("emptyQueueMsg");
+
+      headerCount.textContent = `(${queue.length} EVs waiting)`;
+
+      if (queue.length === 0) {
+        lane.innerHTML = `
+          <div class="queue-empty-msg" id="emptyQueueMsg">
+            <span>✨ No vehicles in waiting queue. All incoming EVs enter charging bays immediately.</span>
+          </div>
+        `;
+      } else {
+        lane.innerHTML = queue.map((ev, idx) => `
+          <div class="queued-ev-card">
+            <div class="queued-ev-icon">🛑</div>
+            <div class="queued-ev-info">
+              <div class="queued-ev-title">#${idx + 1} ${ev.name}</div>
+              <div style="font-size: 11px; color: #94a3b8;">${ev.car_model || 'EV'}</div>
+              <div class="queued-ev-status">
+                <span>${ev.contending_bay ? `⚠️ Mutex Contention: BLOCKED on Bay 0${ev.contending_bay}` : '⚠️ BLOCKED: Waiting for sem.acquire()'}</span>
+              </div>
+            </div>
+          </div>
+        `).join("");
+      }
+    }
+
+    // Render Semaphore Permit Cards
+    function renderSemaphore(permits, total) {
+      document.getElementById("semValueDisplay").textContent = permits;
+      
+      const banner = document.getElementById("semBanner");
+      const bannerText = document.getElementById("semBannerText");
+      const bannerDot = document.getElementById("semBannerDot");
+
+      if (permits > 0) {
+        banner.className = "sem-state-banner normal";
+        bannerDot.textContent = "🟢";
+        bannerText.textContent = `Permits Available (${permits}/${total}): Incoming EV threads acquire immediately`;
+      } else {
+        banner.className = "sem-state-banner saturated";
+        bannerDot.textContent = "🔴";
+        bannerText.textContent = `Semaphore Saturated (0/${total}): New EV threads BLOCK until release()`;
+      }
+
+      // Update tokens 1..3
+      for (let i = 1; i <= 3; i++) {
+        const tokenEl = document.getElementById(`token${i}`);
+        const statusEl = document.getElementById(`tokenStatus${i}`);
+        if (i <= permits) {
+          tokenEl.className = "permit-token available";
+          statusEl.textContent = "Available";
+          tokenEl.querySelector(".token-icon").textContent = "🔑";
+        } else {
+          tokenEl.className = "permit-token acquired";
+          statusEl.textContent = "Acquired";
+          tokenEl.querySelector(".token-icon").textContent = "🔒";
+        }
+      }
+    }
+
+    // Render Console Logs
+    function renderLogs(logs) {
+      const consoleWindow = document.getElementById("consoleWindow");
+      consoleWindow.innerHTML = logs.map(l => `
+        <div class="log-line">
+          <span class="log-time">[${l.time}]</span>
+          <span class="log-tag ${l.type}">${l.type}</span>
+          <span class="log-msg">${escapeHtml(l.message)}</span>
+        </div>
+      `).join("");
+      consoleWindow.scrollTop = consoleWindow.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Render Stats
+    function renderStats(chargers, queue, stats) {
+      const activeCount = chargers.filter(c => c.state !== "Available").length;
+      document.getElementById("activeBaysVal").innerHTML = `${activeCount} <span style="font-size: 14px; color: #64748b;">/ 3</span>`;
+      document.getElementById("activeBaysSub").textContent = `Station load: ${Math.round((activeCount / 3) * 100)}%`;
+      document.getElementById("queueCountVal").textContent = queue.length;
+      document.getElementById("totalEvsVal").textContent = stats.total_evs_served || 0;
+      document.getElementById("totalEnergyVal").innerHTML = `${stats.total_energy_kwh || 0.0} <span style="font-size: 14px;">kWh</span>`;
+    }
+
+    // Full UI Refresh
+    function updateUI(chargers, queue, semValue, stats, logs) {
+      renderBays(chargers);
+      renderQueue(queue);
+      renderSemaphore(semValue, TOTAL_CHARGERS);
+      renderStats(chargers, queue, stats);
+      renderLogs(logs);
+    }
+
+    // -----------------------------------------------------------------------
+    // CLIENT-SIDE SEMAPHORE ENGINE (FALLBACK / PARALLEL EXECUTION)
+    // -----------------------------------------------------------------------
+    function localLog(type, msg) {
+      const timeStr = new Date().toTimeString().split(" ")[0];
+      localState.logs.push({ time: timeStr, type, message: msg });
+      if (localState.logs.length > 50) localState.logs.shift();
+    }
+
+    function localDispatchEV(name, carModel, duration = 3.5) {
+      // 0. Request & queue
+      localState.waiting_queue.push({ name, car_model: carModel, time: Date.now() });
+      localLog("REQUEST", `${name} is requesting a charging point [Semaphore count: ${localState.sem_value}]`);
+      
+      if (localState.sem_value === 0) {
+        playBlockSound();
+      }
+
+      checkQueueAndAllocate();
+      syncLocalUI();
+    }
+
+    function checkQueueAndAllocate() {
+      if (localState.waiting_queue.length === 0) return;
+      if (localState.sem_value <= 0) return; // Counting Semaphore blocked!
+
+      // Find available charger
+      const freeBay = localState.chargers.find(c => c.state === "Available");
+      if (!freeBay) return;
+
+      // Acquire permit
+      localState.sem_value--;
+      const ev = localState.waiting_queue.shift();
+
+      playAcquireSound();
+
+      // Lifecycle 1: Available -> Charging
+      freeBay.state = "Charging";
+      freeBay.ev = ev.name;
+      freeBay.car_model = ev.car_model;
+      freeBay.progress = 0;
+      freeBay.power_kw = 120;
+      freeBay.energy_kwh = 0.0;
+
+      localLog("ACQUIRE", `${ev.name} acquired permit -> Charger #${freeBay.id} [State: Available -> Charging]`);
+      syncLocalUI();
+
+      // Simulate charging progress
+      const steps = 10;
+      const stepInterval = 300; // 3 seconds total
+      let currentStep = 0;
+
+      const chargeTimer = setInterval(() => {
+        currentStep++;
+        freeBay.progress = currentStep * 10;
+        freeBay.energy_kwh = +(currentStep * 3.6).toFixed(1);
+        syncLocalUI();
+
+        if (currentStep >= steps) {
+          clearInterval(chargeTimer);
+
+          // Lifecycle 2: Charging -> Completed
+          freeBay.state = "Completed";
+          freeBay.progress = 100;
+          freeBay.power_kw = 0;
+          playCompleteSound();
+          localLog("COMPLETED", `${ev.name} on Charger #${freeBay.id} charging finished [State: Charging -> Completed]`);
+          syncLocalUI();
+
+          setTimeout(() => {
+            // Lifecycle 3: Completed -> Released
+            freeBay.state = "Released";
+            localLog("RELEASED", `${ev.name} unplugged & exiting Charger #${freeBay.id} [State: Completed -> Released]`);
+            syncLocalUI();
+
+            setTimeout(() => {
+              // Lifecycle 4: Released -> Available & Semaphore Release
+              freeBay.state = "Available";
+              freeBay.ev = null;
+              freeBay.car_model = null;
+              freeBay.progress = 0;
+              localState.stats.total_evs_served++;
+              localState.stats.total_energy_kwh = +(localState.stats.total_energy_kwh + freeBay.energy_kwh).toFixed(1);
+              
+              // Semaphore Release!
+              localState.sem_value = Math.min(TOTAL_CHARGERS, localState.sem_value + 1);
+              localLog("FREE", `Charger #${freeBay.id} is now Available -> Semaphore permit released (Count: ${localState.sem_value})`);
+              
+              syncLocalUI();
+
+              // Check if waiting queue has blocked threads
+              checkQueueAndAllocate();
+            }, 600);
+
+          }, 800);
+        }
+      }, stepInterval);
+    }
+
+    function syncLocalUI() {
+      if (!isConnectedToPython) {
+        updateUI(localState.chargers, localState.waiting_queue, localState.sem_value, localState.stats, localState.logs);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // BACKEND COMMUNICATION (HTTP REST API)
+    // -----------------------------------------------------------------------
+    async function fetchBackendStatus() {
+      try {
+        const res = await fetch("/api/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          setConnected(true);
+          updateUI(
+            data.chargers,
+            data.waiting_queue,
+            data.stats.current_permits,
+            data.stats,
+            data.event_logs
+          );
+          return true;
+        }
+      } catch (e) {
+        // Not connected to python
+      }
+      setConnected(false);
+      return false;
+    }
+
+    function setConnected(status) {
+      isConnectedToPython = status;
+      const dot = document.getElementById("backendDot");
+      const text = document.getElementById("backendStatusText");
+      if (status) {
+        dot.style.backgroundColor = "#10b981";
+        dot.style.boxShadow = "0 0 8px #10b981";
+        text.textContent = "Live Python Semaphore Connected (port 5000)";
+      } else {
+        dot.style.backgroundColor = "#f59e0b";
+        dot.style.boxShadow = "0 0 8px #f59e0b";
+        text.textContent = "Interactive Browser Engine (Ready)";
+        syncLocalUI();
+      }
+    }
+
+    async function sendApiDispatch(evName, carModel, duration) {
+      if (isConnectedToPython) {
+        try {
+          await fetch("/api/dispatch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ev_name: evName, car_model: carModel, duration: parseFloat(duration) })
+          });
+          fetchBackendStatus();
+          return;
+        } catch (e) {}
+      }
+      // Fallback to local
+      localDispatchEV(evName, carModel, parseFloat(duration));
+    }
+
+    async function sendApiBatch() {
+      if (isConnectedToPython) {
+        try {
+          await fetch("/api/batch", { method: "POST" });
+          fetchBackendStatus();
+          return;
+        } catch (e) {}
+      }
+      // Fallback to local
+      const batch = [
+        { name: "S1 (EV-1)", model: "Tesla Model 3" },
+        { name: "S2 (EV-2)", model: "Porsche Taycan" },
+        { name: "S3 (EV-3)", model: "Tata Nexon EV" },
+        { name: "S4 (EV-4)", model: "Hyundai Ioniq 5" },
+        { name: "S5 (EV-5)", model: "Rivian R1T" }
+      ];
+      batch.forEach(ev => localDispatchEV(ev.name, ev.model, 3.5));
+    }
+
+    async function sendApiReset() {
+      if (isConnectedToPython) {
+        try {
+          await fetch("/api/reset", { method: "POST" });
+          fetchBackendStatus();
+          return;
+        } catch (e) {}
+      }
+      // Local reset
+      localState.sem_value = TOTAL_CHARGERS;
+      localState.chargers.forEach(c => {
+        c.state = "Available";
+        c.ev = null;
+        c.car_model = null;
+        c.progress = 0;
+        c.power_kw = 0;
+        c.contending_ev = null;
+      });
+      localState.waiting_queue = [];
+      localState.logs = [];
+      isParallelConflictActive = false;
+      const removeBtn = document.getElementById("btnRemoveConflict");
+      if (removeBtn) removeBtn.style.display = "none";
+      localLog("RESET", "Station reset to initial Available state");
+      syncLocalUI();
+    }
+
+    // -----------------------------------------------------------------------
+    // PARALLEL PROCESSING & SAME-RESOURCE CONFLICT EXECUTION
+    // (Simulates 2 cars requesting the same charging point in parallel)
+    // -----------------------------------------------------------------------
+    let isParallelConflictActive = false;
+
+    function localParallelContention(targetBayId = 1, car1 = "Tesla Model 3 (Car A)", car2 = "Tata Nexon EV (Car B)") {
+      if (isParallelConflictActive) return;
+
+      const targetBay = localState.chargers.find(c => c.id === targetBayId) || localState.chargers[0];
+      const bayName = `Bay 0${targetBay.id}`;
+
+      // Reset target bay to ensure clean demonstration
+      targetBay.state = "Available";
+      targetBay.ev = null;
+      targetBay.progress = 0;
+      targetBay.power_kw = 0;
+      targetBay.energy_kwh = 0;
+      targetBay.contending_ev = null;
+
+      // Clean queue of prior contention
+      localState.waiting_queue = localState.waiting_queue.filter(q => q.contending_bay !== targetBay.id);
+
+      localLog("PARALLEL", `[Parallel Processing] '${car1}' and '${car2}' request ${bayName} at the EXACT same millisecond!`);
+      syncLocalUI();
+
+      // Trigger conflict and PAUSE in conflict state so user can explain to examiner
+      setTimeout(() => {
+        playAcquireSound();
+        targetBay.state = "Charging";
+        targetBay.ev = car1;
+        targetBay.car_model = "Tesla Model 3";
+        targetBay.progress = 40; // Steady active charge state
+        targetBay.power_kw = 150;
+        targetBay.energy_kwh = 14.5;
+        targetBay.contending_ev = car2;
+
+        localLog("MUTEX_LOCK", `[Mutual Exclusion] ${car1} won lock arbitration -> Acquired ${bayName} [Critical Section Active]`);
+        localLog("CONTENTION", `[Resource Conflict] ${car2} contested ${bayName} -> BUSY! Thread 2 is BLOCKED on Lock.`);
+        localLog("HOLDING", `[Simulation Paused in Conflict State] Car B is waiting. Click 'Remove / Resolve Conflict' to resolve.`);
+
+        // Add Car 2 to waiting queue with contention tag
+        localState.waiting_queue.push({
+          name: car2,
+          car_model: "Tata Nexon EV",
+          time: Date.now(),
+          contending_bay: targetBay.id
+        });
+
+        playBlockSound();
+
+        // Show the Remove / Resolve Conflict button
+        const removeBtn = document.getElementById("btnRemoveConflict");
+        if (removeBtn) removeBtn.style.display = "inline-flex";
+
+        isParallelConflictActive = true;
+        syncLocalUI();
+
+        // NOTE: We deliberately do NOT auto-advance or auto-complete here!
+        // The simulation HOLDS in this conflict state so Madam can clearly inspect:
+        // 1. Car A occupies Bay 01.
+        // 2. Car B is BLOCKED with the conflict warning.
+        // 3. User can now click 'Remove / Resolve Conflict' at their own pace!
+      }, 150);
+    }
+
+    function removeParallelConflict() {
+      const contestedBay = localState.chargers.find(c => c.contending_ev);
+      const removeBtn = document.getElementById("btnRemoveConflict");
+      
+      if (!contestedBay) {
+        if (removeBtn) removeBtn.style.display = "none";
+        isParallelConflictActive = false;
+        return;
+      }
+
+      const blockedEv = contestedBay.contending_ev;
+      const car1Name = contestedBay.ev;
+      contestedBay.contending_ev = null;
+
+      // Remove Car 2 from waiting queue
+      const qIdx = localState.waiting_queue.findIndex(q => q.contending_bay === contestedBay.id);
+      if (qIdx !== -1) {
+        localState.waiting_queue.splice(qIdx, 1);
+      }
+
+      // Hide the remove button
+      if (removeBtn) removeBtn.style.display = "none";
+
+      // Look for another available bay to reroute Car 2 to (e.g. Bay 2 or Bay 3)
+      const freeBay = localState.chargers.find(c => c.state === "Available" && c.id !== contestedBay.id);
+
+      if (freeBay) {
+        localLog("RESOLVED", `[Conflict Removed] Operator resolved conflict: '${blockedEv}' unblocked and dynamically rerouted to free Bay 0${freeBay.id}!`);
+        playAcquireSound();
+
+        // Allocate free bay to Car 2
+        freeBay.state = "Charging";
+        freeBay.ev = blockedEv;
+        freeBay.car_model = "Tata Nexon EV";
+        freeBay.progress = 30;
+        freeBay.power_kw = 120;
+        freeBay.energy_kwh = 11.2;
+
+        localLog("INFO", `[Parallel Success] Both cars now charging simultaneously in separate bays without conflict!`);
+        syncLocalUI();
+
+        // Complete both bays smoothly
+        setTimeout(() => {
+          contestedBay.progress = 100;
+          contestedBay.state = "Completed";
+          freeBay.progress = 100;
+          freeBay.state = "Completed";
+          playCompleteSound();
+          localLog("COMPLETED", `Both ${car1Name} and ${blockedEv} successfully completed charging!`);
+          syncLocalUI();
+
+          setTimeout(() => {
+            contestedBay.state = "Released";
+            freeBay.state = "Released";
+            syncLocalUI();
+
+            setTimeout(() => {
+              contestedBay.state = "Available";
+              contestedBay.ev = null;
+              contestedBay.progress = 0;
+              freeBay.state = "Available";
+              freeBay.ev = null;
+              freeBay.progress = 0;
+              localState.stats.total_evs_served += 2;
+              localState.stats.total_energy_kwh = +(localState.stats.total_energy_kwh + 64.5).toFixed(1);
+
+              localLog("FREE", `All bays are now Available. Conflict resolution demonstration complete.`);
+              isParallelConflictActive = false;
+              syncLocalUI();
+            }, 600);
+          }, 800);
+        }, 1200);
+
+      } else {
+        // If no other bay is free, Car 1 completes and hands over to Car 2
+        localLog("RESOLVED", `[Conflict Removed] Operator released ${blockedEv}. Serializing handover.`);
+        contestedBay.progress = 100;
+        contestedBay.state = "Completed";
+        syncLocalUI();
+
+        setTimeout(() => {
+          contestedBay.state = "Released";
+          syncLocalUI();
+
+          setTimeout(() => {
+            contestedBay.state = "Charging";
+            contestedBay.ev = blockedEv;
+            contestedBay.car_model = "Tata Nexon EV";
+            contestedBay.progress = 50;
+            localLog("WAKEUP", `[Handover] ${blockedEv} now charging on Bay 0${contestedBay.id}.`);
+            syncLocalUI();
+
+            setTimeout(() => {
+              contestedBay.progress = 100;
+              contestedBay.state = "Completed";
+              syncLocalUI();
+              setTimeout(() => {
+                contestedBay.state = "Available";
+                contestedBay.ev = null;
+                contestedBay.progress = 0;
+                isParallelConflictActive = false;
+                syncLocalUI();
+              }, 600);
+            }, 1000);
+          }, 600);
+        }, 800);
+      }
+
+      syncLocalUI();
+    }
+
+    // -----------------------------------------------------------------------
+    // UI BUTTON EVENT LISTENERS
+    // -----------------------------------------------------------------------
+    document.getElementById("btnQuickParallel").addEventListener("click", () => {
+      localParallelContention(1, "Tesla Model 3 (Car A)", "Tata Nexon EV (Car B)");
+    });
+
+    document.getElementById("btnRemoveConflict").addEventListener("click", () => {
+      removeParallelConflict();
+    });
+    document.getElementById("btnRunBatch").addEventListener("click", () => {
+      sendApiBatch();
+    });
+
+    document.getElementById("btnQuickDispatch").addEventListener("click", () => {
+      const models = ["Tesla Model 3", "Tata Nexon EV", "Porsche Taycan", "Hyundai Ioniq 5", "Rivian R1T"];
+      const chosenModel = models[Math.floor(Math.random() * models.length)];
+      const name = `EV-${nextEvId++}`;
+      sendApiDispatch(name, chosenModel, 3.0);
+    });
+
+    document.getElementById("btnRushHour").addEventListener("click", () => {
+      const models = ["Tesla Model 3", "Tata Nexon EV", "Porsche Taycan", "Hyundai Ioniq 5", "Rivian R1T"];
+      for (let i = 1; i <= 8; i++) {
+        const name = `Rush-EV-${nextEvId++}`;
+        const chosenModel = models[(i - 1) % models.length];
+        sendApiDispatch(name, chosenModel, 3.5);
+      }
+    });
+
+    document.getElementById("btnCustomDispatch").addEventListener("click", () => {
+      const name = document.getElementById("customEvName").value.trim() || `EV-${nextEvId++}`;
+      const model = document.getElementById("customEvModel").value;
+      const duration = document.getElementById("customDuration").value;
+      sendApiDispatch(name, model, duration);
+      // Auto-increment placeholder
+      document.getElementById("customEvName").value = `EV-${nextEvId + 1}`;
+    });
+
+    document.getElementById("btnReset").addEventListener("click", () => {
+      sendApiReset();
+    });
+
+    document.getElementById("btnAudioToggle").addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById("audioIcon").textContent = soundEnabled ? "🔊" : "🔇";
+      document.getElementById("audioLabel").textContent = soundEnabled ? "Sound FX: On" : "Sound FX: Muted";
+      if (soundEnabled) initAudio();
+    });
+
+    document.getElementById("btnClearLogs").addEventListener("click", () => {
+      localState.logs = [];
+      document.getElementById("consoleWindow").innerHTML = "";
+    });
+
+    // Initial boot
+    localLog("INIT", "SRU Product 11: EV Charging Station Allocation System initialized");
+    localLog("INFO", "OS Concept: Counting Semaphore (Capacity = 3 permits)");
+    localLog("INFO", "Unique Feature: Charger Lifecycle: Available -> Charging -> Completed -> Released");
+    syncLocalUI();
+
+    // Check backend connection & poll
+    fetchBackendStatus();
+    checkBackendInterval = setInterval(fetchBackendStatus, 800);
+  </script>
+</body>
+</html>
+
